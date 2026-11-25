@@ -28,6 +28,11 @@ public class CorsResponseFilter implements ContainerResponseFilter {
         if (origin == null) {
             return false;
         }
-        return origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+        return origin.equals("http://localhost")
+                || origin.startsWith("http://localhost:")
+                || origin.equals("http://127.0.0.1")
+                || origin.startsWith("http://127.0.0.1:")
+                || origin.equals("http://galeno.frontend")
+                || origin.startsWith("http://galeno.frontend:");
     }
 }
