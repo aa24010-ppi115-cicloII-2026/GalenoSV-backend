@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['ordenExamen.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['ordenExamen.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['consultaProcedimientoPaso.titulo']}" outcome="/paginas/ConsultaProcedimientoPaso"/>
+            </f:facet>
+        </p:toolbar>
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
+            <h:panelGroup id="pnlTabla" layout="block" rendered="#{ordenExamenModel.estado eq 'NADA'}">
+                <h:form id="frmTabla">
+                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlContenido :mensajes"/>
+                    <p:dataTable id="tabla" value="#{ordenExamenModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{ordenExamenModel.cantidadRegistros}" paginatorPosition="bottom"
+                                 emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
+                                 selection="#{ordenExamenModel.registro}" rowKey="#{r.idOrdenExamen}">
+                        <p:ajax event="rowSelect" listener="#{ordenExamenModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
+                        <p:column headerText="#{msg['ordenExamen.tabla.consultaProcedimientoPaso']}"><h:outputText value="#{r.idConsultaProcedimientoPaso.idConsultaProcedimientoPaso}"/></p:column>
+                        <p:column headerText="#{msg['ordenExamen.tabla.fechaCreacion']}"><h:outputText value="#{r.fechaCreacion}"/></p:column>
+                        <p:column headerText="#{msg['ordenExamen.tabla.indicaciones']}"><h:outputText value="#{r.indicaciones}"/></p:column>
+                    </p:dataTable>
+                </h:form>
+            </h:panelGroup>
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:form id="frmDetalle" rendered="#{ordenExamenModel.estado ne 'NADA'}">
+                    <g:botonesTop modelo="#{ordenExamenModel}" actualizar=":pnlContenido :mensajes"/>
+                    <h:panelGrid columns="2" cellpadding="5">
+                        <p:outputLabel for="txtId" value="#{msg['ordenExamen.form.id']}"/>
+                        <p:inputText id="txtId" value="#{ordenExamenModel.registro.idOrdenExamen}" size="50" disabled="true"/>
+                        <p:outputLabel for="cmbPaso" value="#{msg['ordenExamen.form.consultaProcedimientoPaso']}"/>
+                        <p:selectOneMenu id="cmbPaso" value="#{ordenExamenModel.idConsultaProcedimientoPasoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{ordenExamenModel.consultaProcedimientoPasos}" var="p" itemLabel="#{p.idPersonaRol.idPersona.nombres} #{p.idPersonaRol.idPersona.apellidos} - #{p.estado}" itemValue="#{p.idConsultaProcedimientoPaso}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="txtFecha" value="#{msg['ordenExamen.form.fechaCreacion']}"/>
+                        <p:inputText id="txtFecha" value="#{ordenExamenModel.registro.fechaCreacion}" size="50" disabled="true"/>
+                        <p:outputLabel for="txtIndicaciones" value="#{msg['ordenExamen.form.indicaciones']}"/>
+                        <p:inputTextarea id="txtIndicaciones" value="#{ordenExamenModel.registro.indicaciones}" rows="4" cols="50" maxlength="1000"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="#{ordenExamenModel.estado eq 'CREAR' ? 1 : 2}">
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}" actionListener="#{ordenExamenModel.btnGuardarHandler}" rendered="#{ordenExamenModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}" actionListener="#{ordenExamenModel.btnModificarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}" actionListener="#{ordenExamenModel.btnEliminarHandler}" rendered="#{ordenExamenModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+        </h:panelGrid>
+    </ui:define>
+</ui:composition>

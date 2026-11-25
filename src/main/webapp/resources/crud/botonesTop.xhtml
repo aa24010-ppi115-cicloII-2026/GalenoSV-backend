@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:component xmlns="http://www.w3.org/1999/xhtml"
+              xmlns:cc="jakarta.faces.composite"
+              xmlns:ui="jakarta.faces.facelets"
+              xmlns:h="jakarta.faces.html"
+              xmlns:p="http://primefaces.org/ui">
+
+    <cc:interface>
+        <cc:attribute name="modelo"
+                      type="sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel"
+                      required="true"/>
+        <cc:attribute name="actualizar"
+                      type="java.lang.String"
+                      default=":pnlContenido"
+                      required="false"/>
+    </cc:interface>
+
+    <cc:implementation>
+        <h:panelGrid columns="#{cc.attrs.modelo.estado eq 'NADA' ? 1 : 2}">
+            <p:commandButton id="btnNuevo"
+                             value="#{msg['boton.agregar']} #{cc.attrs.modelo.nombreBean}"
+                             icon="pi pi-plus" styleClass="ui-button-primary"
+                             actionListener="#{cc.attrs.modelo.btnNuevoHandler}"
+                             rendered="#{cc.attrs.modelo.estado eq 'NADA'}"
+                             resetValues="true"
+                             update="#{cc.attrs.actualizar}"/>
+            <p:commandButton id="btnCancelar"
+                             value="#{msg['boton.volver']}"
+                             icon="pi pi-times" styleClass="ui-button-secondary"
+                             actionListener="#{cc.attrs.modelo.btnCancelarHandler}"
+                             rendered="#{cc.attrs.modelo.estado ne 'NADA'}"
+                             immediate="true"
+                             resetValues="true"
+                             update="#{cc.attrs.actualizar}"/>
+        </h:panelGrid>
+    </cc:implementation>
+</ui:component>

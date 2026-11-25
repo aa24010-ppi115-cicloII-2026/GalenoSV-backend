@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core" xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui" xmlns:ui="jakarta.faces.facelets"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">Procedimientos - GalenoSV</ui:define>
+    <ui:define name="encabezado">Procedimientos</ui:define>
+    <ui:define name="contenido">
+        <h:form id="frmProcedimiento">
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
+
+            <h:panelGroup id="contenidoProcedimiento" layout="block">
+                <h:panelGroup rendered="#{procedimientoModel.estado eq 'NADA'}">
+                    <div class="video-actions">
+                        <p:commandButton value="Nuevo Procedimiento" icon="pi pi-plus"
+                                         actionListener="#{procedimientoModel.btnNuevoHandler}"
+                                         resetValues="true" update="contenidoProcedimiento mensajes"/>
+                    </div>
+                    <p:dataTable id="tabla" value="#{procedimientoModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{procedimientoModel.cantidadRegistros}"
+                                 paginatorPosition="bottom" emptyMessage="No se encontraron procedimientos"
+                                 selectionMode="single" selection="#{procedimientoModel.registro}"
+                                 rowKey="#{r.idProcedimiento}">
+                        <p:ajax event="rowSelect" listener="#{procedimientoModel.selectionHandler}"
+                                resetValues="true" update="contenidoProcedimiento mensajes"/>
+                        <p:column headerText="Nombre"><h:outputText value="#{r.nombre}"/></p:column>
+                        <p:column headerText="Activo"><h:outputText value="#{r.activo ? 'Sí' : 'No'}"/></p:column>
+                    </p:dataTable>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{procedimientoModel.estado ne 'NADA'}">
+                    <div class="video-actions">
+                        <p:commandButton value="Cancelar Procedimiento" icon="pi pi-times"
+                                         actionListener="#{procedimientoModel.btnCancelarHandler}" immediate="true"
+                                         styleClass="ui-button-secondary" resetValues="true" update="contenidoProcedimiento mensajes"/>
+                    </div>
+
+                    <p:tabView id="tabsProcedimiento">
+                        <p:tab title="Detalle">
+                            <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
+                                <p:outputLabel for="idProcedimiento" value="ID"/>
+                                <p:inputText id="idProcedimiento" value="#{procedimientoModel.registro.idProcedimiento}"
+                                             size="52" disabled="true"/>
+                                <p:outputLabel for="nombreProcedimiento" value="Nombre *"/>
+                                <p:inputText id="nombreProcedimiento" value="#{procedimientoModel.registro.nombre}"
+                                             size="52" required="true" maxlength="255"/>
+                                <p:outputLabel for="activoProcedimiento" value="Activo"/>
+                                <p:toggleSwitch id="activoProcedimiento" value="#{procedimientoModel.registro.activo}"/>
+                                <p:outputLabel for="observacionesProcedimiento" value="Observaciones"/>
+                                <p:inputTextarea id="observacionesProcedimiento"
+                                                 value="#{procedimientoModel.registro.observaciones}"
+                                                 rows="3" cols="50" maxlength="1000"/>
+                            </h:panelGrid>
+                            <div class="video-actions">
+                                <p:commandButton value="Guardar Procedimiento" icon="pi pi-save"
+                                                 actionListener="#{procedimientoModel.btnGuardarHandler}"
+                                                 rendered="#{procedimientoModel.estado eq 'CREAR'}"
+                                                 process="@this idProcedimiento nombreProcedimiento activoProcedimiento observacionesProcedimiento"
+                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes"/>
+                                <p:commandButton value="Guardar Procedimiento" icon="pi pi-save"
+                                                 actionListener="#{procedimientoModel.btnModificarHandler}"
+                                                 rendered="#{procedimientoModel.estado eq 'MODIFICAR'}"
+                                                 process="@this idProcedimiento nombreProcedimiento activoProcedimiento observacionesProcedimiento"
+                                                 update=":frmProcedimiento:contenidoProcedimiento :frmProcedimiento:mensajes"/>
+                                <p:commandButton value="Eliminar" icon="pi pi-trash"
+                                                 actionListener="#{procedimientoModel.btnEliminarHandler}"
+                                                 rendered="#{procedimientoModel.estado eq 'MODIFICAR'}"
+                                                 process="@this" update="contenidoProcedimiento mensajes"
+                                                 styleClass="ui-button-danger"/>
+                            </div>
+                        </p:tab>
+
+                        <p:tab title="Pasos" disabled="#{procedimientoModel.estado eq 'CREAR'}">
+                            <h:panelGroup id="panelPasos" layout="block">
+                                <h:panelGroup rendered="#{not procedimientoModel.capturandoPaso}">
+                                    <h:panelGroup id="toolbarPasos" layout="block" styleClass="video-actions">
+                                        <p:commandButton value="Nuevo Paso Inicial" icon="pi pi-plus"
+                                                         actionListener="#{procedimientoModel.prepararCapturaPaso}"
+                                                         process="@this" resetValues="true" update="panelPasos"
+                                                         rendered="#{procedimientoModel.puedeCrearPasoInicial}"/>
+                                        <p:commandButton id="btnPasoDependiente"
+                                                         value="Agregar al paso seleccionado" icon="pi pi-sitemap"
+                                                         actionListener="#{procedimientoModel.prepararPasoDependienteSeleccionado}"
+                                                         process="@this" resetValues="true" update="panelPasos :frmProcedimiento:mensajes"
+                                                         disabled="#{empty procedimientoModel.pasoNodoSeleccionado or procedimientoModel.pasoSeleccionadoEsFin}"
+                                                         title="#{procedimientoModel.pasoSeleccionadoEsFin ? 'El paso seleccionado indica el fin y no admite dependientes' : 'Agregar paso dependiente del seleccionado'}"
+                                                         rendered="#{not procedimientoModel.puedeCrearPasoInicial}"/>
+                                        <p:commandButton id="btnModificarPasoSel"
+                                                         value="Modificar seleccionado" icon="pi pi-pencil"
+                                                         actionListener="#{procedimientoModel.prepararEdicionPasoSeleccionado}"
+                                                         process="@this"
+                                                         resetValues="true" update="panelPasos"
+                                                         disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
+                                                         title="Modificar paso seleccionado"/>
+                                        <p:commandButton id="btnEliminarPasoSel"
+                                                         value="Eliminar seleccionado" icon="pi pi-trash"
+                                                         actionListener="#{procedimientoModel.eliminarPasoSeleccionado}"
+                                                         process="@this"
+                                                         update="panelPasos :frmProcedimiento:mensajes"
+                                                         disabled="#{empty procedimientoModel.pasoNodoSeleccionado}"
+                                                         title="Eliminar paso seleccionado"
+                                                         styleClass="ui-button-danger">
+                                            <p:confirm header="Eliminar paso"
+                                                       message="¿Desea eliminar el paso seleccionado?"
+                                                       icon="pi pi-exclamation-triangle"/>
+                                        </p:commandButton>
+                                    </h:panelGroup>
+                                    <p:treeTable id="arbolPasos" value="#{procedimientoModel.arbolPasos}" var="paso"
+                                                 emptyMessage="No se encontraron pasos" selectionMode="single"
+                                                 selection="#{procedimientoModel.pasoNodoSeleccionado}">
+                                        <p:ajax event="select" listener="#{procedimientoModel.onPasoNodoSelect}"
+                                                update="toolbarPasos"/>
+                                        <p:column headerText="Nombre">
+                                            <h:outputText value="#{paso.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="ID">
+                                            <h:outputText value="#{paso.idProcedimientoPaso}"/>
+                                        </p:column>
+                                        <p:column headerText="A cargo de">
+                                            <h:outputText value="#{paso.idRol.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="Indica fin">
+                                            <h:outputText value="#{paso.indicaFin ? 'Sí' : 'No'}"/>
+                                        </p:column>
+                                    </p:treeTable>
+                                </h:panelGroup>
+
+                                <h:panelGroup rendered="#{procedimientoModel.capturandoPaso}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Cancelar Pasos" icon="pi pi-times"
+                                                         actionListener="#{procedimientoModel.cancelarCapturaPaso}"
+                                                         process="@this" resetValues="true" update="panelPasos"
+                                                         styleClass="ui-button-secondary paso-compact"/>
+                                    </div>
+                                    <h:panelGrid columns="2" cellpadding="4" styleClass="paso-grid-left">
+                                        <p:outputLabel for="idPaso" value="ID"/>
+                                        <p:inputText id="idPaso" value="#{procedimientoModel.nuevoPaso.idProcedimientoPaso}"
+                                                     disabled="true"/>
+
+                                        <p:outputLabel for="nombrePaso" value="Nombre"/>
+                                        <p:inputText id="nombrePaso" value="#{procedimientoModel.nuevoPaso.nombre}"
+                                                     required="true" maxlength="255"/>
+
+                                        <p:outputLabel for="rolPaso" value="A cargo de"/>
+                                        <h:panelGroup layout="block" style="display:flex;gap:8px;align-items:center">
+                                            <p:inputText id="rolPaso" value="#{procedimientoModel.nombreRolPaso}"
+                                                         readonly="true" required="true" style="flex:1"/>
+                                            <p:commandButton type="button" value="Seleccionar Rol" icon="pi pi-search"
+                                                             styleClass="paso-compact" onclick="PF('dlgRoles').show()"/>
+                                        </h:panelGroup>
+
+                                        <p:outputLabel for="dependePaso" value="Depende de"/>
+                                        <p:selectOneMenu id="dependePaso"
+                                                         value="#{procedimientoModel.idPasoAnteriorSeleccionadoSecuencia}"
+                                                         filter="true" filterMatchMode="contains" filterPlaceholder="Buscar paso..."
+                                                         disabled="#{procedimientoModel.dependenciaBloqueada or (empty procedimientoModel.padresDisponibles and empty procedimientoModel.pasosDelProcedimiento)}"
+                                                         title="#{procedimientoModel.dependenciaBloqueada ? 'Fijado al paso seleccionado' : ''}">
+                                            <f:selectItem itemLabel="#{empty procedimientoModel.pasosDelProcedimiento ? 'Primer paso del procedimiento' : 'Seleccione un paso'}"
+                                                          itemValue=""/>
+                                            <f:selectItems value="#{procedimientoModel.padresDisponibles}" var="anterior"
+                                                           itemLabel="#{anterior.nombre}" itemValue="#{anterior.idProcedimientoPaso}"/>
+                                        </p:selectOneMenu>
+
+                                        <p:outputLabel for="indicaFin" value="Indica finalización del procedimiento"/>
+                                        <p:selectBooleanCheckbox id="indicaFin" value="#{procedimientoModel.nuevoPaso.indicaFin}"/>
+                                    </h:panelGrid>
+
+                                    <p:fieldset legend="Exámenes" styleClass="paso-fieldset">
+                                        <div class="examen-toolbar">
+                                            <p:commandButton type="button" value="Agregar Examen" icon="pi pi-plus"
+                                                             styleClass="paso-compact" onclick="PF('dlgExamenesPaso').show()"/>
+                                            <p:commandButton id="btnEliminarExamenPaso" styleClass="ui-button-danger paso-compact"
+                                                             value="Eliminar" icon="pi pi-trash" title="Eliminar seleccionado"
+                                                             actionListener="#{procedimientoModel.eliminarExamenSeleccionadoPaso}"
+                                                             process="@this tablaExamenesPaso"
+                                                             update="tablaExamenesPaso"
+                                                             disabled="#{empty procedimientoModel.examenPasoSeleccionadoTemporal}"/>
+                                        </div>
+                                        <p:dataTable id="tablaExamenesPaso"
+                                                     value="#{procedimientoModel.examenesSeleccionadosPaso}"
+                                                     var="examenPaso" emptyMessage="No se requieren exámenes"
+                                                     selectionMode="single"
+                                                     selection="#{procedimientoModel.examenPasoSeleccionadoTemporal}"
+                                                     rowKey="#{examenPaso.idExamen}">
+                                            <p:ajax event="rowSelect"
+                                                    update=":frmProcedimiento:tabsProcedimiento:btnEliminarExamenPaso"/>
+                                            <p:column headerText="Examen"><h:outputText value="#{examenPaso.nombre}"/></p:column>
+                                        </p:dataTable>
+                                    </p:fieldset>
+                                    <div class="paso-actions">
+                                    <p:commandButton value="#{procedimientoModel.editandoPaso ? 'Modificar Paso' : 'Guardar Pasos'}"
+                                                     icon="pi pi-save" styleClass="paso-compact"
+                                                     actionListener="#{procedimientoModel.guardarPasoCompleto}"
+                                                     process="panelPasos" update=":frmProcedimiento:tabsProcedimiento:panelPasos :frmProcedimiento:mensajes"/>
+                                    </div>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+
+            <p:dialog header="Seleccionar Rol" widgetVar="dlgRoles" modal="true" width="420" responsive="true">
+                <h:panelGrid columns="1" cellpadding="5" style="width:100%">
+                    <p:outputLabel for="acRol" value="Rol responsable"/>
+                    <p:autoComplete id="acRol" value="#{procedimientoModel.rolAutocompleteSeleccionado}"
+                                    completeMethod="#{procedimientoModel.buscarRolPorNombre}"
+                                    var="r" itemLabel="#{r.nombre}" itemValue="#{r}"
+                                    converter="rolConverter" forceSelection="true" dropdown="true"
+                                    minQueryLength="3" scrollHeight="250" style="width:100%"
+                                    placeholder="Escriba al menos 3 letras..."/>
+                    <p:commandButton value="Seleccionar" icon="pi pi-check" styleClass="paso-compact"
+                                     actionListener="#{procedimientoModel.confirmarRolAutocompletado}"
+                                     process="@this acRol" update=":frmProcedimiento:tabsProcedimiento:rolPaso :frmProcedimiento:mensajes"
+                                     oncomplete="PF('dlgRoles').hide()"/>
+                </h:panelGrid>
+            </p:dialog>
+
+            <p:dialog header="Agregar Examen" widgetVar="dlgExamenesPaso" modal="true" width="420" responsive="true">
+                <h:panelGrid columns="1" cellpadding="5" style="width:100%">
+                    <p:outputLabel for="acExamen" value="Examen"/>
+                    <p:autoComplete id="acExamen" value="#{procedimientoModel.examenAutocompleteSeleccionado}"
+                                    completeMethod="#{procedimientoModel.buscarExamenPorNombre}"
+                                    var="e" itemLabel="#{e.nombre}" itemValue="#{e}"
+                                    converter="examenConverter" forceSelection="true" dropdown="true"
+                                    minQueryLength="3" scrollHeight="250" style="width:100%"
+                                    placeholder="Escriba al menos 3 letras..."/>
+                    <p:commandButton value="Agregar" icon="pi pi-plus" styleClass="paso-compact"
+                                     actionListener="#{procedimientoModel.agregarExamenAutocompletado}"
+                                     process="@this acExamen"
+                                     update=":frmProcedimiento:tabsProcedimiento:tablaExamenesPaso :frmProcedimiento:mensajes"
+                                     oncomplete="PF('dlgExamenesPaso').hide()"/>
+                </h:panelGrid>
+            </p:dialog>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
+                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes"/>
+            </p:confirmDialog>
+        </h:form>
+    </ui:define>
+</ui:composition>

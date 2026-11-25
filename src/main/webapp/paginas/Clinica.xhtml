@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['clinica.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['clinica.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
+            <h:panelGroup id="pnlTabla" layout="block">
+                <h:form id="frmTabla" rendered="#{clinicaModel.estado eq 'NADA'}">
+                    <h:panelGrid columns="1">
+                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlContenido :mensajes"/>
+                        <p:dataTable id="tabla" value="#{clinicaModel.modelo}" var="r" lazy="true"
+                                     paginator="true" rows="#{clinicaModel.cantidadRegistros}"
+                                     paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                     selectionMode="single" selection="#{clinicaModel.registro}"
+                                     rowKey="#{r.idClinica}">
+                            <p:ajax event="rowSelect" listener="#{clinicaModel.selectionHandler}"
+                                    resetValues="true"
+                                    update=":pnlContenido :mensajes :avisos"/>
+                            <p:column headerText="#{msg['tabla.nombre']}"><h:outputText value="#{r.nombre}"/></p:column>
+                            <p:column headerText="#{msg['tabla.activo']}"><h:outputText value="#{r.activo ? msg['tabla.activo'] : msg['tabla.inactivo']}"/></p:column>
+                            <p:column headerText="#{msg['clinica.tabla.tipo']}"><h:outputText value="#{r.tipo}"/></p:column>
+                            <p:column headerText="#{msg['clinica.tabla.comentarios']}"><h:outputText value="#{r.comentarios}"/></p:column>
+                        </p:dataTable>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:form id="frmDetalle" rendered="#{clinicaModel.estado ne 'NADA'}">
+                    <h:panelGrid columns="1">
+                        <g:botonesTop modelo="#{clinicaModel}" actualizar=":pnlContenido :mensajes"/>
+                        <h:panelGrid columns="2" cellpadding="5">
+                            <p:outputLabel for="txtId" value="#{msg['clinica.form.id']}"/>
+                            <p:inputText id="txtId" value="#{clinicaModel.registro.idClinica}" size="50" disabled="true"/>
+                            <p:outputLabel for="txtNombre" value="#{msg['clinica.form.nombre']}"/>
+                            <p:inputText id="txtNombre" value="#{clinicaModel.registro.nombre}" required="true"
+                                         requiredMessage="#{msg['clinica.nombre.requerido']}" size="50" maxlength="255"/>
+                            <p:outputLabel for="swActivo" value="#{msg['clinica.form.activo']}"/>
+                            <p:toggleSwitch id="swActivo" value="#{clinicaModel.registro.activo}"/>
+                            <p:outputLabel for="txtTipo" value="#{msg['clinica.form.tipo']}"/>
+                            <p:selectOneMenu id="txtTipo" value="#{clinicaModel.registro.tipo}"
+                                             required="true" requiredMessage="#{msg['validacion.seleccione']}"
+                                             style="width:360px">
+                                <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                <f:selectItems value="#{clinicaModel.tiposClinica}" var="t"
+                                               itemLabel="#{t.etiqueta}" itemValue="#{t.valor}"/>
+                            </p:selectOneMenu>
+                            <p:outputLabel for="txtComentarios" value="#{msg['clinica.form.comentarios']}"/>
+                            <p:inputTextarea id="txtComentarios" value="#{clinicaModel.registro.comentarios}" rows="3" cols="50" maxlength="1000"/>
+                        </h:panelGrid>
+                        <h:panelGrid columns="#{clinicaModel.estado eq 'CREAR' ? 1 : 2}">
+                            <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
+                                             actionListener="#{clinicaModel.btnGuardarHandler}"
+                                             rendered="#{clinicaModel.estado eq 'CREAR'}"
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-success"/>
+                            <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
+                                             actionListener="#{clinicaModel.btnModificarHandler}"
+                                             rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-warning"/>
+                            <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
+                                             actionListener="#{clinicaModel.btnEliminarHandler}"
+                                             rendered="#{clinicaModel.estado eq 'MODIFICAR'}"
+                                             update=":pnlContenido :mensajes :avisos" styleClass="ui-button-danger"/>
+                        </h:panelGrid>
+                    </h:panelGrid>
+                </h:form>
+                <p:tabView rendered="#{clinicaModel.estado eq 'MODIFICAR'}">
+                    <p:tab title="#{msg['personaRol.titulo']}">
+                        <h:form id="frmRoles">
+                            <g:botonesTop modelo="#{clinicaModel.personaRolModel}" actualizar="@form :mensajes"/>
+                            <p:dataTable value="#{clinicaModel.personaRolModel.modelo}" var="asignacion"
+                                         lazy="true" paginator="true" rows="20" paginatorPosition="bottom"
+                                         selectionMode="single" rowKey="#{asignacion.idPersonaRol}"
+                                         selection="#{clinicaModel.personaRolModel.registro}"
+                                         rendered="#{clinicaModel.personaRolModel.estado eq 'NADA'}"
+                                         emptyMessage="#{msg['tabla.sinRegistros']}">
+                                <p:ajax event="rowSelect" listener="#{clinicaModel.personaRolModel.selectionHandler}" resetValues="true" update="@form :mensajes :avisos"/>
+                                <p:column headerText="#{msg['personaRol.form.persona']}">
+                                    <h:outputText value="#{asignacion.idPersona.nombres} #{asignacion.idPersona.apellidos}"/>
+                                </p:column>
+                                <p:column headerText="#{msg['personaRol.form.rol']}">
+                                    <h:outputText value="#{asignacion.idRol.nombre}"/>
+                                </p:column>
+                            </p:dataTable>
+                            <h:panelGrid columns="2" rendered="#{clinicaModel.personaRolModel.estado ne 'NADA'}">
+                                <p:outputLabel for="persona" value="#{msg['personaRol.form.persona']}"/>
+                                <p:selectOneMenu id="persona" value="#{clinicaModel.personaRolModel.idPersonaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                                    <f:selectItem xmlns:f="jakarta.faces.core" itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                    <f:selectItems xmlns:f="jakarta.faces.core" value="#{clinicaModel.personaRolModel.personas}" var="persona"
+                                                   itemLabel="#{persona.nombres} #{persona.apellidos}" itemValue="#{persona.idPersona}"/>
+                                </p:selectOneMenu>
+                                <p:outputLabel for="rol" value="#{msg['personaRol.form.rol']}"/>
+                                <p:selectOneMenu id="rol" value="#{clinicaModel.personaRolModel.idRolSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                                    <f:selectItem xmlns:f="jakarta.faces.core" itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                                    <f:selectItems xmlns:f="jakarta.faces.core" value="#{clinicaModel.personaRolModel.roles}" var="rol"
+                                                   itemLabel="#{rol.nombre}" itemValue="#{rol.idRol}"/>
+                                </p:selectOneMenu>
+                            </h:panelGrid>
+                            <p:commandButton value="#{msg['boton.guardar']}" process="@form"
+                                             actionListener="#{clinicaModel.personaRolModel.btnGuardarHandler}"
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'CREAR'}" update="@form :mensajes :avisos"/>
+                            <p:commandButton value="#{msg['boton.modificar']}" process="@form"
+                                             actionListener="#{clinicaModel.personaRolModel.btnModificarHandler}"
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes :avisos"/>
+                            <p:commandButton value="#{msg['boton.eliminar']}" process="@this" resetValues="true"
+                                             actionListener="#{clinicaModel.personaRolModel.btnEliminarHandler}"
+                                             rendered="#{clinicaModel.personaRolModel.estado eq 'MODIFICAR'}" update="@form :mensajes :avisos"/>
+                        </h:form>
+                    </p:tab>
+                </p:tabView>
+            </h:panelGroup>
+        </h:panelGrid>
+    </ui:define>
+</ui:composition>

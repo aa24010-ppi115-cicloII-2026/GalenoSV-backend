@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['inicio.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['inicio.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <section class="inicio-cabecera">
+            <div>
+                <h2>#{msg['inicio.bienvenida']}</h2>
+                <p>#{msg['inicio.descripcion']}</p>
+            </div>
+            <div class="inicio-acciones">
+                <p:button value="#{msg['inicio.accion.nuevoPaciente']}" outcome="/paginas/Persona"
+                          icon="pi pi-user-plus" styleClass="ui-button-secondary"/>
+                <p:button value="#{msg['inicio.accion.nuevaConsulta']}" outcome="/paginas/Consulta"
+                          icon="pi pi-plus"/>
+            </div>
+        </section>
+
+        <section class="inicio-seccion" aria-labelledby="titulo-accesos">
+            <h2 id="titulo-accesos">#{msg['inicio.accesos']}</h2>
+            <div class="inicio-accesos">
+                <h:link outcome="/paginas/Persona" styleClass="inicio-acceso">
+                    <span class="inicio-acceso-titulo"><i class="pi pi-users" aria-hidden="true"/>#{msg['inicio.stats.pacientes']}</span>
+                    <strong>#{inicioBean.totalPacientes}</strong>
+                    <span class="inicio-acceso-detalle">#{msg['inicio.acceso.pacientes.desc']}</span>
+                </h:link>
+                <h:link outcome="/paginas/Consulta" styleClass="inicio-acceso">
+                    <span class="inicio-acceso-titulo"><i class="pi pi-heart" aria-hidden="true"/>#{msg['inicio.stats.consultas']}</span>
+                    <strong>#{inicioBean.totalConsultas}</strong>
+                    <span class="inicio-acceso-detalle">#{msg['inicio.acceso.consultas.desc']}</span>
+                </h:link>
+                <h:link outcome="/paginas/OrdenExamen" styleClass="inicio-acceso">
+                    <span class="inicio-acceso-titulo"><i class="pi pi-file" aria-hidden="true"/>#{msg['inicio.stats.ordenes']}</span>
+                    <strong>#{inicioBean.totalOrdenes}</strong>
+                    <span class="inicio-acceso-detalle">#{msg['inicio.acceso.ordenes.desc']}</span>
+                </h:link>
+                <h:link outcome="/paginas/ExamenResultado" styleClass="inicio-acceso">
+                    <span class="inicio-acceso-titulo"><i class="pi pi-check-circle" aria-hidden="true"/>#{msg['inicio.stats.resultados']}</span>
+                    <strong>#{inicioBean.totalResultados}</strong>
+                    <span class="inicio-acceso-detalle">#{msg['inicio.acceso.resultados.desc']}</span>
+                </h:link>
+            </div>
+        </section>
+
+        <section class="inicio-seccion inicio-panel" aria-labelledby="titulo-recientes">
+            <h2 id="titulo-recientes">#{msg['inicio.recientes']}</h2>
+            <p:dataTable value="#{inicioBean.ultimasConsultas}" var="c" rows="5"
+                         emptyMessage="#{msg['tabla.sinRegistros']}">
+                <p:column headerText="#{msg['consulta.tabla.paciente']}">
+                    <h:outputText value="#{c.idPersonaRol.idPersona.nombres} #{c.idPersonaRol.idPersona.apellidos}"/>
+                </p:column>
+                <p:column headerText="#{msg['consulta.tabla.fechaInicio']}">
+                    <h:outputText value="#{fechaBean.fechaHora(c.fechaInicio)}"/>
+                </p:column>
+                <p:column headerText="#{msg['consulta.form.referenciaExterna']}">
+                    <h:outputText value="#{c.referenciaExterna}"/>
+                </p:column>
+            </p:dataTable>
+        </section>
+    </ui:define>
+</ui:composition>

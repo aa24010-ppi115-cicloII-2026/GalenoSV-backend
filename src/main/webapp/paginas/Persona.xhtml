@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core" xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui" xmlns:ui="jakarta.faces.facelets"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">Personas - GalenoSV</ui:define>
+    <ui:define name="encabezado">Personas</ui:define>
+    <ui:define name="contenido">
+        <h:form id="frmPersona">
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
+            <h:panelGroup id="contenidoPersona" layout="block">
+                <h:panelGroup rendered="#{personaModel.estado eq 'NADA'}">
+                    <div class="video-actions">
+                        <p:commandButton value="Nueva Persona" icon="pi pi-plus"
+                                         actionListener="#{personaModel.btnNuevoHandler}"
+                                         resetValues="true" update="contenidoPersona mensajes"/>
+                    </div>
+                    <p:dataTable value="#{personaModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{personaModel.cantidadRegistros}"
+                                 emptyMessage="No se encontraron personas"
+                                 selectionMode="single" selection="#{personaModel.registro}"
+                                 rowKey="#{r.idPersona}">
+                        <p:ajax event="rowSelect" listener="#{personaModel.selectionHandler}"
+                                resetValues="true" update="contenidoPersona mensajes"/>
+                        <p:column headerText="Nombres"><h:outputText value="#{r.nombres}"/></p:column>
+                        <p:column headerText="Apellidos"><h:outputText value="#{r.apellidos}"/></p:column>
+                        <p:column headerText="Fecha de nacimiento"><h:outputText value="#{fechaBean.fecha(r.fechaNacimiento)}"/></p:column>
+                    </p:dataTable>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{personaModel.estado ne 'NADA'}">
+                    <div class="video-actions">
+                        <p:commandButton value="Cancelar Persona" icon="pi pi-times"
+                                         actionListener="#{personaModel.btnCancelarHandler}" immediate="true"
+                                         resetValues="true" update="contenidoPersona mensajes" styleClass="ui-button-secondary"/>
+                    </div>
+                    <p:tabView>
+                        <p:tab title="Detalle">
+                            <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
+                                <p:outputLabel for="personaId" value="ID"/>
+                                <p:inputText id="personaId" value="#{personaModel.registro.idPersona}" size="52" disabled="true"/>
+                                <p:outputLabel for="personaNombres" value="Nombres"/>
+                                <p:inputText id="personaNombres" value="#{personaModel.registro.nombres}"
+                                             size="52" maxlength="255" required="true"/>
+                                <p:outputLabel for="personaApellidos" value="Apellidos"/>
+                                <p:inputText id="personaApellidos" value="#{personaModel.registro.apellidos}"
+                                             size="52" maxlength="255" required="true"/>
+                                <p:outputLabel for="personaNacimiento" value="Fecha de nacimiento"/>
+                                <p:datePicker id="personaNacimiento" value="#{personaModel.fechaNacimiento}"
+                                              pattern="dd/MM/yyyy" required="true" showIcon="true"
+                                              monthNavigator="true" yearNavigator="true" yearRange="1900:#{fechaBean.anioActual}"
+                                              showButtonBar="true"/>
+                                <p:outputLabel for="personaCreacion" value="Fecha creación"/>
+                                <p:inputText id="personaCreacion" value="#{fechaBean.fechaHora(personaModel.registro.fechaCreacion)}"
+                                             size="52" disabled="true"/>
+                            </h:panelGrid>
+                            <div class="video-actions">
+                                <p:commandButton value="Guardar Persona" icon="pi pi-save"
+                                                 actionListener="#{personaModel.btnGuardarHandler}"
+                                                 rendered="#{personaModel.estado eq 'CREAR'}"
+                                                 process="@this personaId personaNombres personaApellidos personaNacimiento"
+                                                 update="contenidoPersona mensajes"/>
+                                <p:commandButton value="Guardar Persona" icon="pi pi-save"
+                                                 actionListener="#{personaModel.btnModificarHandler}"
+                                                 rendered="#{personaModel.estado eq 'MODIFICAR'}"
+                                                 process="@this personaId personaNombres personaApellidos personaNacimiento"
+                                                 update="contenidoPersona mensajes"/>
+                                <p:commandButton value="Eliminar" icon="pi pi-trash"
+                                                 actionListener="#{personaModel.btnEliminarHandler}"
+                                                 rendered="#{personaModel.estado eq 'MODIFICAR'}"
+                                                 process="@this" update="contenidoPersona mensajes"
+                                                 styleClass="ui-button-danger"/>
+                            </div>
+                        </p:tab>
+
+                        <p:tab title="Documentos" disabled="#{personaModel.estado eq 'CREAR'}">
+                            <h:panelGroup id="panelDocumentos">
+                                <h:panelGroup rendered="#{personaModel.documentoModel.estado eq 'NADA'}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{personaModel.documentoModel.btnNuevoHandler}"
+                                                         process="@this" resetValues="true" update="panelDocumentos mensajes"/>
+                                    </div>
+                                    <p:dataTable value="#{personaModel.documentoModel.modelo}" var="doc" lazy="true"
+                                                 paginator="true" rows="10" emptyMessage="No se encontraron documentos"
+                                                 selectionMode="single" selection="#{personaModel.documentoModel.registro}"
+                                                 rowKey="#{doc.idDocumento}">
+                                        <p:ajax event="rowSelect" listener="#{personaModel.documentoModel.selectionHandler}"
+                                                resetValues="true" update="panelDocumentos mensajes"/>
+                                        <p:column headerText="Tipo"><h:outputText value="#{doc.idTipoDocumento.nombre}"/></p:column>
+                                        <p:column headerText="Valor"><h:outputText value="#{doc.valor}"/></p:column>
+                                        <p:column headerText="Ruta física"><h:outputText value="#{doc.rutaFisica}"/></p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{personaModel.documentoModel.estado ne 'NADA'}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Cancelar" icon="pi pi-times"
+                                                         actionListener="#{personaModel.documentoModel.btnCancelarHandler}"
+                                                         process="@this" resetValues="true" update="panelDocumentos mensajes"
+                                                         styleClass="ui-button-secondary"/>
+                                    </div>
+                                    <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
+                                        <p:outputLabel for="documentoId" value="ID"/>
+                                        <p:inputText id="documentoId" value="#{personaModel.documentoModel.registro.idDocumento}"
+                                                     size="52" disabled="true"/>
+                                        <p:outputLabel for="documentoTipo" value="Tipo *"/>
+                                        <p:selectOneMenu id="documentoTipo"
+                                                         value="#{personaModel.documentoModel.idTipoDocumentoSeleccionado}"
+                                                         required="true" style="width:360px"
+                                                         disabled="#{personaModel.documentoModel.estado eq 'MODIFICAR'}">
+                                            <f:selectItem itemLabel="Seleccione un tipo" itemValue=""/>
+                                            <f:selectItems value="#{personaModel.documentoModel.tiposDocumento}" var="td"
+                                                           itemLabel="#{td.nombre}" itemValue="#{td.idTipoDocumento}"/>
+                                        </p:selectOneMenu>
+                                        <p:outputLabel for="documentoValor" value="Valor *"/>
+                                        <p:inputText id="documentoValor" value="#{personaModel.documentoModel.registro.valor}"
+                                                     size="52" required="true" maxlength="50"/>
+                                        <p:outputLabel for="documentoRuta" value="Ruta física"/>
+                                        <p:inputText id="documentoRuta" value="#{personaModel.documentoModel.registro.rutaFisica}"
+                                                     size="52" maxlength="255"/>
+                                    </h:panelGrid>
+                                    <div class="video-actions">
+                                        <p:commandButton value="Guardar" icon="pi pi-save"
+                                                         actionListener="#{personaModel.documentoModel.btnGuardarHandler}"
+                                                         rendered="#{personaModel.documentoModel.estado eq 'CREAR'}"
+                                                         process="panelDocumentos"
+                                                         update="panelDocumentos mensajes"/>
+                                        <p:commandButton value="Guardar" icon="pi pi-save"
+                                                         actionListener="#{personaModel.documentoModel.btnModificarHandler}"
+                                                         rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}"
+                                                         process="panelDocumentos"
+                                                         update="panelDocumentos mensajes"/>
+                                        <p:commandButton value="Eliminar" icon="pi pi-trash"
+                                                         actionListener="#{personaModel.documentoModel.btnEliminarHandler}"
+                                                         rendered="#{personaModel.documentoModel.estado eq 'MODIFICAR'}"
+                                                         process="@this" update="panelDocumentos mensajes"
+                                                         styleClass="ui-button-danger"/>
+                                    </div>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <p:tab title="Medios de Contacto" disabled="#{personaModel.estado eq 'CREAR'}">
+                            <h:panelGroup id="panelMedios">
+                                <h:panelGroup rendered="#{not personaModel.capturandoMedio}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{personaModel.iniciarCapturaMedio}"
+                                                         process="@this" resetValues="true" update="panelMedios"/>
+                                    </div>
+                                    <p:dataTable value="#{personaModel.mediosDeContacto}" var="mc"
+                                                 emptyMessage="No se encontraron medios de contacto"
+                                                 selectionMode="single" selection="#{personaModel.medioSeleccionado}"
+                                                 rowKey="#{mc.idMedioContacto}">
+                                        <p:ajax event="rowSelect" listener="#{personaModel.onMedioSelect}" resetValues="true" update="panelMedios"/>
+                                        <p:column headerText="Tipo"><h:outputText value="#{mc.idTipoMedioContacto.nombre}"/></p:column>
+                                        <p:column headerText="Valor"><h:outputText value="#{mc.valor}"/></p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{personaModel.capturandoMedio}">
+                                <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
+                                    <p:outputLabel for="medioTipo" value="Tipo *"/>
+                                    <p:selectOneMenu id="medioTipo" value="#{personaModel.idTipoMedioContactoSeleccionado}"
+                                                     required="true" style="width:360px"
+                                                     disabled="#{personaModel.editandoMedio}">
+                                        <f:selectItem itemLabel="Seleccione un tipo" itemValue=""/>
+                                        <f:selectItems value="#{personaModel.tiposMedioContacto}" var="tmc"
+                                                       itemLabel="#{tmc.nombre}" itemValue="#{tmc.idTipoMedioContacto}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel for="medioValor" value="Valor *"/>
+                                    <p:inputText id="medioValor" value="#{personaModel.nuevoMedioContacto.valor}"
+                                                 size="52" required="true" maxlength="255"/>
+                                </h:panelGrid>
+                                <div class="video-actions">
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                                     actionListener="#{personaModel.agregarMedioContacto}"
+                                                     rendered="#{not personaModel.editandoMedio}"
+                                                     process="panelMedios" update="panelMedios mensajes"/>
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                                     actionListener="#{personaModel.modificarMedioContacto}"
+                                                     rendered="#{personaModel.editandoMedio}"
+                                                     process="panelMedios" update="panelMedios mensajes"/>
+                                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                                     actionListener="#{personaModel.cancelarEdicionMedio}"
+                                                     process="@this" resetValues="true" update="panelMedios"
+                                                     styleClass="ui-button-secondary"/>
+                                </div>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+
+                        <p:tab title="Roles" disabled="#{personaModel.estado eq 'CREAR'}">
+                            <h:panelGroup id="panelRoles">
+                                <h:panelGroup rendered="#{not personaModel.capturandoRol}">
+                                    <div class="video-actions">
+                                        <p:commandButton value="Nuevo" icon="pi pi-plus"
+                                                         actionListener="#{personaModel.iniciarCapturaRol}"
+                                                         process="@this" resetValues="true" update="panelRoles"/>
+                                    </div>
+                                    <p:dataTable id="tablaRoles" value="#{personaModel.rolesDePersona}" var="pr"
+                                                 emptyMessage="No se encontraron roles"
+                                                 selectionMode="single" selection="#{personaModel.rolSeleccionado}"
+                                                 rowKey="#{pr.idPersonaRol}">
+                                        <p:ajax event="rowSelect" listener="#{personaModel.onRolSelect}" resetValues="true" update="panelRoles"/>
+                                        <p:column headerText="ID"><h:outputText value="#{pr.idPersonaRol}"/></p:column>
+                                        <p:column headerText="Rol"><h:outputText value="#{pr.idRol.nombre}"/></p:column>
+                                        <p:column headerText="Clínica"><h:outputText value="#{pr.idClinica.nombre}"/></p:column>
+                                        <p:column headerText="Fecha de Creación"><h:outputText value="#{pr.fechaCreacion}"/></p:column>
+                                    </p:dataTable>
+                                </h:panelGroup>
+                                <h:panelGroup rendered="#{personaModel.capturandoRol}">
+                                <h:panelGrid columns="2" cellpadding="4" styleClass="video-form-grid">
+                                    <p:outputLabel for="rolClinica" value="Clínica *"/>
+                                    <p:selectOneMenu id="rolClinica" value="#{personaModel.idClinicaSeleccionadaRol}"
+                                                     required="true" style="width:360px"
+                                                     disabled="#{personaModel.editandoRol}">
+                                        <f:selectItem itemLabel="Seleccione una clínica" itemValue=""/>
+                                        <f:selectItems value="#{personaModel.clinicas}" var="cli"
+                                                       itemLabel="#{cli.nombre}" itemValue="#{cli.idClinica}"/>
+                                    </p:selectOneMenu>
+                                    <p:outputLabel for="rolPersona" value="Rol *"/>
+                                    <p:selectOneMenu id="rolPersona" value="#{personaModel.idRolSeleccionado}"
+                                                     required="true" style="width:360px"
+                                                     disabled="#{personaModel.editandoRol}">
+                                        <f:selectItem itemLabel="Seleccione un rol" itemValue=""/>
+                                        <f:selectItems value="#{personaModel.rolesDisponibles}" var="rol"
+                                                       itemLabel="#{rol.nombre}" itemValue="#{rol.idRol}"/>
+                                    </p:selectOneMenu>
+                                </h:panelGrid>
+                                <div class="video-actions">
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                                     actionListener="#{personaModel.agregarRol}"
+                                                     rendered="#{not personaModel.editandoRol}"
+                                                     process="panelRoles" update="panelRoles mensajes"/>
+                                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                                     actionListener="#{personaModel.modificarRol}"
+                                                     rendered="#{personaModel.editandoRol}"
+                                                     process="panelRoles" update="panelRoles mensajes"/>
+                                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                                     actionListener="#{personaModel.cancelarEdicionRol}"
+                                                     process="@this" resetValues="true" update="panelRoles"
+                                                     styleClass="ui-button-secondary"/>
+                                </div>
+                                </h:panelGroup>
+                            </h:panelGroup>
+                        </p:tab>
+                    </p:tabView>
+                </h:panelGroup>
+            </h:panelGroup>
+        </h:form>
+    </ui:define>
+</ui:composition>

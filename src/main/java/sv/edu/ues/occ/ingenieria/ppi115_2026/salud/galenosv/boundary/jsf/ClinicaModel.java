@@ -1,0 +1,114 @@
+package sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.jsf;
+
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import java.io.Serializable;
+import java.util.UUID;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.AbstractModel;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.ClinicaDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.PersonaRolDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.control.DefaultDAO;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.Clinica;
+import sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.entity.TipoClinica;
+
+@Named("clinicaModel")
+@ViewScoped
+public class ClinicaModel extends AbstractModel<Clinica> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Inject
+    FacesContext facesContext;
+
+    @Inject
+    ClinicaDAO dao;
+
+    @Inject
+    PersonaRolDAO personaRolDAO;
+
+    @Inject
+    PersonaRolModel personaRolModel;
+
+    public PersonaRolModel getPersonaRolModel() {
+        personaRolModel.establecerClinicaMaestro(
+                estado == sv.edu.ues.occ.ingenieria.ppi115_2026.salud.galenosv.boundary.ESTADO_CRUD.MODIFICAR
+                        && registro != null ? registro.getIdClinica() : null);
+        return personaRolModel;
+    }
+
+    public TipoClinica[] getTiposClinica() {
+        return TipoClinica.values();
+    }
+
+    @Override
+    protected void validarEliminacion(Clinica r) {
+        long n = r.getIdClinica() == null ? 0 : personaRolDAO.countByClinica(r.getIdClinica());
+        if (n > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la clínica porque tiene " + n + " asignacion(es) de personal");
+        }
+    }
+
+    public ClinicaModel() {
+        this.nombreBean = "Clinica";
+    }
+
+    @Override
+    protected FacesContext getFacesContext() {
+        return facesContext;
+    }
+
+    @Override
+    protected void validarUnicidad(Clinica r, boolean esModificacion) {
+        if (r.getNombre() == null || r.getNombre().isBlank()) {
+            return;
+        }
+        r.setNombre(r.getNombre().trim());
+        java.util.UUID excluir = esModificacion ? r.getIdClinica() : null;
+        if (dao.existeNombre(r.getNombre(), excluir)) {
+            throw new IllegalArgumentException("Ya existe una clínica con ese nombre");
+        }
+    }
+
+    @Override
+    protected DefaultDAO<Clinica> getDao() {
+        return dao;
+    }
+
+    @Override
+    protected Clinica nuevoRegistro() {
+        Clinica r = new Clinica();
+        r.setIdClinica(UUID.randomUUID());
+        r.setActivo(true);
+        return r;
+    }
+
+    @Override
+    protected Clinica buscarRegistroPorId(Object id) {
+        if (id instanceof UUID buscado) {
+            return dao.find(buscado);
+        }
+        return null;
+    }
+
+    @Override
+    protected String getIdAsText(Clinica r) {
+        if (r != null && r.getIdClinica() != null) {
+            return r.getIdClinica().toString();
+        }
+        return null;
+    }
+
+    @Override
+    protected Clinica getIdByText(String id) {
+        if (id != null) {
+            try {
+                return dao.find(UUID.fromString(id));
+            } catch (IllegalArgumentException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+}

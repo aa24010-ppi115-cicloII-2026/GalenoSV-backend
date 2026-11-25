@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">#{msg['consultaProcedimiento.titulo']} - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">#{msg['consultaProcedimiento.titulo']}</ui:define>
+    <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['consulta.titulo']}" outcome="/paginas/Consulta"/>
+            </f:facet>
+        </p:toolbar>
+        <h:panelGrid id="pnlContenido" columns="1" style="width:100%">
+            <h:panelGroup id="pnlTabla" layout="block" rendered="#{consultaProcedimientoModel.estado eq 'NADA'}">
+                <h:form id="frmTabla">
+                    <g:botonesTop modelo="#{consultaProcedimientoModel}" actualizar=":pnlContenido :mensajes"/>
+                    <p:dataTable id="tabla" value="#{consultaProcedimientoModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{consultaProcedimientoModel.cantidadRegistros}" paginatorPosition="bottom"
+                                 emptyMessage="#{msg['tabla.sinRegistros']}" selectionMode="single"
+                                 selection="#{consultaProcedimientoModel.registro}" rowKey="#{r.idConsultaProcedimiento}">
+                        <p:ajax event="rowSelect" listener="#{consultaProcedimientoModel.selectionHandler}"
+                                     resetValues="true" update=":pnlContenido :mensajes :avisos"/>
+                        <p:column headerText="#{msg['consultaProcedimiento.tabla.consulta']}"><h:outputText value="#{r.idConsulta.idConsulta}"/></p:column>
+                        <p:column headerText="#{msg['consultaProcedimiento.tabla.procedimiento']}"><h:outputText value="#{r.idProcedimiento}"/></p:column>
+                        <p:column headerText="#{msg['consultaProcedimiento.tabla.fechaInicio']}"><h:outputText value="#{r.fechaInicio}"/></p:column>
+                        <p:column headerText="#{msg['tabla.observaciones']}"><h:outputText value="#{r.observaciones}"/></p:column>
+                    </p:dataTable>
+                </h:form>
+            </h:panelGroup>
+            <h:panelGroup id="pnlDetalle" layout="block">
+                <h:form id="frmDetalle" rendered="#{consultaProcedimientoModel.estado ne 'NADA'}">
+                    <g:botonesTop modelo="#{consultaProcedimientoModel}" actualizar=":pnlContenido :mensajes"/>
+                    <h:panelGrid columns="2" cellpadding="5">
+                        <p:outputLabel for="txtId" value="#{msg['consultaProcedimiento.form.id']}"/>
+                        <p:inputText id="txtId" value="#{consultaProcedimientoModel.registro.idConsultaProcedimiento}" size="50" disabled="true"/>
+                        <p:outputLabel for="cmbConsulta" value="#{msg['consultaProcedimiento.form.consulta']}"/>
+                        <p:selectOneMenu id="cmbConsulta" value="#{consultaProcedimientoModel.idConsultaSeleccionada}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{consultaProcedimientoModel.consultas}" var="c" itemLabel="#{c.idPersonaRol.idPersona.nombres} #{c.idPersonaRol.idPersona.apellidos} - #{c.fechaInicio}" itemValue="#{c.idConsulta}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="cmbProcedimiento" value="#{msg['consultaProcedimiento.form.procedimiento']}"/>
+                        <p:selectOneMenu id="cmbProcedimiento" value="#{consultaProcedimientoModel.idProcedimientoSeleccionado}" required="true" requiredMessage="#{msg['validacion.seleccione']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{consultaProcedimientoModel.procedimientos}" var="p" itemLabel="#{p.nombre}" itemValue="#{p.idProcedimiento}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="txtFechaInicio" value="#{msg['consultaProcedimiento.form.fechaInicio']}"/>
+                        <p:inputText id="txtFechaInicio" value="#{consultaProcedimientoModel.registro.fechaInicio}" size="50" disabled="true"/>
+                        <p:outputLabel for="txtObservaciones" value="#{msg['consultaProcedimiento.form.observaciones']}"/>
+                        <p:inputTextarea id="txtObservaciones" value="#{consultaProcedimientoModel.registro.observaciones}" rows="4" cols="50" maxlength="1000"/>
+                    </h:panelGrid>
+                    <h:panelGrid columns="#{consultaProcedimientoModel.estado eq 'CREAR' ? 1 : 2}">
+                        <p:commandButton id="btnGuardar" value="#{msg['boton.guardar']}" icon="pi pi-check" styleClass="ui-button-success" actionListener="#{consultaProcedimientoModel.btnGuardarHandler}" rendered="#{consultaProcedimientoModel.estado eq 'CREAR'}" update=":pnlContenido :mensajes :avisos"/>
+                        <p:commandButton id="btnModificar" value="#{msg['boton.modificar']}" icon="pi pi-pencil" styleClass="ui-button-warning" actionListener="#{consultaProcedimientoModel.btnModificarHandler}" rendered="#{consultaProcedimientoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos"/>
+                        <p:commandButton id="btnEliminar" value="#{msg['boton.eliminar']}" icon="pi pi-trash" styleClass="ui-button-danger" actionListener="#{consultaProcedimientoModel.btnEliminarHandler}" rendered="#{consultaProcedimientoModel.estado eq 'MODIFICAR'}" update=":pnlContenido :mensajes :avisos"/>
+                    </h:panelGrid>
+                </h:form>
+            </h:panelGroup>
+        </h:panelGrid>
+    </ui:define>
+</ui:composition>

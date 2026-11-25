@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:f="jakarta.faces.core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:g="jakarta.faces.composite/crud"
+                template="../WEB-INF/plantillas/general.xhtml">
+    <ui:define name="titulo">Resultados de Examen - #{msg['sistema.titulo']}</ui:define>
+    <ui:define name="encabezado">Resultados de Examen</ui:define>
+
+    <ui:define name="contenido">
+        <p:toolbar style="margin-bottom:12px">
+            <f:facet name="left">
+                <p:link value="← #{msg['detalle.volver']}: #{msg['ordenExamen.titulo']}" outcome="/paginas/OrdenExamen"/>
+            </f:facet>
+        </p:toolbar>
+        <h:form id="frmExamenResultado">
+            <p:messages id="mensajes" showDetail="true" skipDetailIfEqualsSummary="true" closable="true"/>
+
+            <!-- ===== TABLA PRINCIPAL (estado NADA) ===== -->
+            <h:panelGroup id="pnlTabla" layout="block" rendered="#{examenResultadoModel.estado eq 'NADA'}">
+                <h:panelGrid columns="1" style="width:100%">
+                    <g:botonesTop modelo="#{examenResultadoModel}" actualizar=":frmExamenResultado"/>
+                    <p:dataTable id="tabla" value="#{examenResultadoModel.modelo}" var="r" lazy="true"
+                                 paginator="true" rows="#{examenResultadoModel.cantidadRegistros}"
+                                 paginatorPosition="bottom" emptyMessage="#{msg['tabla.sinRegistros']}"
+                                 selectionMode="single" selection="#{examenResultadoModel.registro}"
+                                 rowKey="#{r.idExamenResultado}">
+                        <p:ajax event="rowSelect" listener="#{examenResultadoModel.selectionHandler}" resetValues="true" update=":frmExamenResultado"/>
+
+                        <p:column headerText="#{msg['examenResultado.tabla.ordenPaciente']}" style="width:40%">
+                            <h:outputText value="#{examenResultadoModel.descripcionOrden(r.idOrdenExamen)}"/>
+                        </p:column>
+                        <p:column headerText="#{msg['examenResultado.tabla.fechaCreacion']}">
+                            <h:outputText value="#{examenResultadoModel.formatearFecha(r.fechaCreacion)}"/>
+                        </p:column>
+                        <p:column headerText="#{msg['examenResultado.tabla.resultado']}">
+                            <h:outputText value="#{r.resultado != null and r.resultado.length() gt 80 ? r.resultado.substring(0,80).concat('...') : r.resultado}"/>
+                        </p:column>
+                        <p:column headerText="#{msg['examenResultado.tabla.conInterpretacion']}" style="width:120px; text-align:center">
+                            <h:outputText value="#{not empty r.interpretacion ? msg['tabla.si'] : msg['tabla.no']}"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:panelGrid>
+            </h:panelGroup>
+
+            <!-- ===== PANEL DE DETALLE (CREAR / MODIFICAR) ===== -->
+            <h:panelGroup id="pnlDetalle" layout="block" rendered="#{examenResultadoModel.estado ne 'NADA'}">
+                <g:botonesTop modelo="#{examenResultadoModel}" actualizar=":frmExamenResultado"/>
+
+                <p:panel header="#{msg['examenResultado.panel.datos']}" style="margin-top:10px;">
+                    <h:panelGrid columns="2" cellpadding="8" style="width:100%">
+
+                        <!-- ID (solo lectura) -->
+                        <p:outputLabel for="txtId" value="#{msg['examenResultado.form.id']}"/>
+                        <p:inputText id="txtId" value="#{examenResultadoModel.registro.idExamenResultado}"
+                                     size="50" disabled="true"/>
+
+                        <!-- Orden de Examen asociada -->
+                        <p:outputLabel for="cmbOrden" value="#{msg['examenResultado.form.ordenExamen']} *"/>
+                        <p:selectOneMenu id="cmbOrden" value="#{examenResultadoModel.idOrdenExamenSeleccionada}"
+                                         style="width:400px" required="true"
+                                         requiredMessage="#{msg['examenResultado.seleccione.orden']}">
+                            <f:selectItem itemLabel="#{msg['examenTipoExamen.form.seleccione']}" itemValue=""/>
+                            <f:selectItems value="#{examenResultadoModel.ordenesExamen}" var="o"
+                                           itemLabel="#{examenResultadoModel.descripcionOrden(o)}"
+                                           itemValue="#{o.idOrdenExamen}"/>
+                        </p:selectOneMenu>
+
+                        <!-- Fecha (automática, solo lectura) -->
+                        <p:outputLabel for="txtFecha" value="#{msg['examenResultado.form.fechaCreacion']}"/>
+                        <p:inputText id="txtFecha"
+                                     value="#{examenResultadoModel.formatearFecha(examenResultadoModel.registro.fechaCreacion)}"
+                                     size="30" disabled="true"/>
+
+                        <!-- Resultado -->
+                        <p:outputLabel for="txtResultado" value="#{msg['examenResultado.form.resultado']} *"/>
+                        <p:inputTextarea id="txtResultado" value="#{examenResultadoModel.registro.resultado}"
+                                         rows="5" cols="60" required="true"
+                                         requiredMessage="#{msg['examenResultado.resultado.requerido']}"
+                                         placeholder="#{msg['examenResultado.placeholder.resultado']}" maxlength="1000"/>
+
+                        <!-- Interpretación -->
+                        <p:outputLabel for="txtInterpretacion" value="#{msg['examenResultado.form.interpretacionMedico']}"/>
+                        <p:inputTextarea id="txtInterpretacion" value="#{examenResultadoModel.registro.interpretacion}"
+                                         rows="4" cols="60"
+                                         placeholder="#{msg['examenResultado.placeholder.interpretacion']}" maxlength="1000"/>
+
+                        <!-- Ruta del atestado (archivo físico) -->
+                        <p:outputLabel for="txtRuta" value="#{msg['examenResultado.form.rutaAtestado']}"/>
+                        <p:inputText id="txtRuta" value="#{examenResultadoModel.registro.rutaAtestado}"
+                                     size="60"
+                                     placeholder="#{msg['examenResultado.ejemplo.ruta']}" maxlength="255"/>
+                    </h:panelGrid>
+
+                    <!-- Botones de acción con process explícito para evitar validación cruzada -->
+                    <h:panelGrid columns="#{examenResultadoModel.estado eq 'CREAR' ? 1 : 2}" style="margin-top:10px;">
+                        <p:commandButton id="btnGuardar" icon="pi pi-check" value="#{msg['boton.guardar']}"
+                                         actionListener="#{examenResultadoModel.btnGuardarHandler}"
+                                         rendered="#{examenResultadoModel.estado eq 'CREAR'}"
+                                         update=":frmExamenResultado" styleClass="ui-button-success"
+                                         process="@this txtId cmbOrden txtFecha txtResultado txtInterpretacion txtRuta"/>
+
+                        <p:commandButton id="btnModificar" icon="pi pi-pencil" value="#{msg['boton.modificar']}"
+                                         actionListener="#{examenResultadoModel.btnModificarHandler}"
+                                         rendered="#{examenResultadoModel.estado eq 'MODIFICAR'}"
+                                         update=":frmExamenResultado" styleClass="ui-button-primary"
+                                         process="@this txtId cmbOrden txtFecha txtResultado txtInterpretacion txtRuta"/>
+
+                        <p:commandButton id="btnEliminar" icon="pi pi-trash" value="#{msg['boton.eliminar']}"
+                                         actionListener="#{examenResultadoModel.btnEliminarHandler}"
+                                         rendered="#{examenResultadoModel.estado eq 'MODIFICAR'}"
+                                         update=":frmExamenResultado" styleClass="ui-button-danger"
+                                         process="@this">
+                            <p:confirm header="#{msg['confirm.titulo']}"
+                                       message="#{msg['confirm.eliminar']}"
+                                       icon="pi pi-info-circle"/>
+                        </p:commandButton>
+                    </h:panelGrid>
+                </p:panel>
+
+                <!-- ===== PANEL DE CONTEXTO: Info de la Orden seleccionada ===== -->
+                <p:panel header="#{msg['examenResultado.panel.contexto']}" style="margin-top:15px;"
+                         rendered="#{examenResultadoModel.registro.idOrdenExamen != null}">
+                    <h:panelGrid columns="4" cellpadding="8">
+                        <p:outputLabel value="#{msg['consulta.form.paciente']}:"/>
+                        <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.idConsultaProcedimiento.idConsulta.idPersonaRol.idPersona.nombres}
+                                              #{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.idConsultaProcedimiento.idConsulta.idPersonaRol.idPersona.apellidos}"/>
+
+                        <p:outputLabel value="#{msg['examenResultado.info.estadoPaso']}:"/>
+                        <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.idConsultaProcedimientoPaso.estado}"/>
+
+                        <p:outputLabel value="#{msg['examenResultado.info.indicaciones']}:"/>
+                        <h:outputText value="#{examenResultadoModel.registro.idOrdenExamen.indicaciones}"/>
+
+                        <p:outputLabel value="#{msg['examenResultado.info.fechaOrden']}:"/>
+                        <h:outputText value="#{examenResultadoModel.formatearFecha(examenResultadoModel.registro.idOrdenExamen.fechaCreacion)}"/>
+                    </h:panelGrid>
+                </p:panel>
+            </h:panelGroup>
+
+            <!-- Confirm Dialog global -->
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
+                <p:commandButton value="#{msg['confirm.no']}" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="#{msg['confirm.si']}" type="button" styleClass="ui-confirmdialog-yes"/>
+            </p:confirmDialog>
+
+        </h:form>
+    </ui:define>
+</ui:composition>
